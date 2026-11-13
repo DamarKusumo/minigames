@@ -61,6 +61,10 @@ export function renderLevelSelect(game) {
       btn.disabled = true;
       btn.textContent += ' 🔒';
     } else {
+      const best = getHighScore(game.id, level.id);
+      if (best !== null) {
+        btn.textContent += game.scoreIsLowerBetter ? ` — Best: ${best}s` : ` — Best: ${best}`;
+      }
       btn.addEventListener('click', () => renderGame(game, level.id));
     }
     item.appendChild(btn);

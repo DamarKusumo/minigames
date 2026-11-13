@@ -143,6 +143,7 @@ export default {
   mount(root, options) {
     const level = SUDOKU_LEVELS.find((l) => l.id === options.level) || SUDOKU_LEVELS[0];
     let { puzzle } = generateSudoku(level.holes);
+    let givens = new Set(puzzle.map((v, i) => (v !== null ? i : -1)).filter((i) => i >= 0));
     let selected = null;
     let seconds = 0;
     let won = false;
@@ -193,6 +194,7 @@ export default {
         cell.textContent = puzzle[i] === null ? '' : String(puzzle[i]);
         cell.className = 'sudoku-cell';
         if (bad.has(i)) cell.className += ' conflict';
+        if (givens.has(i)) cell.className += ' given';
         if (i === selected) cell.className += ' selected';
         if ((Math.floor(i / 9) % 3 === 0)) cell.className += ' band-top';
         if ((i % 9) % 3 === 0) cell.className += ' band-left';
@@ -200,7 +202,7 @@ export default {
     }
 
     function setValue(v) {
-      if (selected === null || won) return;
+      if (selected === null || won || givens.has(selected)) return; // printed clues are immutable
       puzzle[selected] = v;
       if (isCompleteAndValid()) {
         won = true;
@@ -226,6 +228,7 @@ export default {
       seconds = 0;
       selected = null;
       puzzle = generateSudoku(level.holes).puzzle;
+      givens = new Set(puzzle.map((v, i) => (v !== null ? i : -1)).filter((i) => i >= 0));
       draw();
     }
 

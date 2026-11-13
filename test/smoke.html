@@ -7,7 +7,7 @@
   <script type="module">
     import { boot } from '../js/app.js';
     import { solve } from '../games/sudoku.js';
-    import { resetStorage, setUnlockedLevel, getUnlockedLevel } from '../js/storage.js';
+    import { resetStorage, setUnlockedLevel, getUnlockedLevel, setHighScore } from '../js/storage.js';
     const log = [];
     const step = (name, ok) => log.push(`${ok ? 'OK' : 'FAIL'} ${name}`);
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -36,9 +36,11 @@
       document.querySelector('#app > .btn').click();
       step('levels->menu', !!document.querySelector('.card-grid'));
 
-      // lock rendering via Bounce (third card): locked by default, unlocks via storage
+      // lock rendering + best-score display via Bounce (third card)
+      setHighScore('bounce', 1, 7);
       document.querySelectorAll('.card')[2].click();
       step('level2 starts locked', btns()[1].disabled === true);
+      step('best score shown on level', btns()[0].textContent.includes('Best: 7'));
       setUnlockedLevel('bounce', 2);
       document.querySelector('#app > .btn').click(); // levels -> menu
       document.querySelectorAll('.card')[2].click(); // menu -> levels (fresh render reads storage)
@@ -74,6 +76,16 @@
       const so = document.querySelector('.overlay');
       step('sudoku win overlay', !!so && !so.hidden && so.textContent.includes('Solved'));
       step('sudoku clear wired to storage', getUnlockedLevel('sudoku') >= 2);
+
+      // given clues are immutable: a filled cell cannot be erased or overwritten.
+      // use the win overlay's "New puzzle" so the won-guard doesn't mask the test
+      [...so.querySelectorAll('button')].find((b) => b.textContent === 'New puzzle').click();
+      const given = scells().find((c) => c.textContent !== '');
+      const before = given.textContent;
+      given.click();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '5' }));
+      step('given clue immutable', given.textContent === before);
     } catch (e) {
       log.push(`THROW ${e.message}`);
     }
