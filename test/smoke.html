@@ -114,6 +114,14 @@
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
       window.dispatchEvent(new KeyboardEvent('keydown', { key: '5' }));
       step('given clue immutable', given.textContent === before);
+
+      // clear overlay offers a path to the next level
+      const nextBtn = [...so.querySelectorAll('button')].find((b) => b.textContent.includes('Next'));
+      step('clear offers next level', !!nextBtn);
+      if (nextBtn) {
+        nextBtn.click();
+        step('next level loads', document.querySelector('.hud').textContent.includes('Medium'));
+      }
     } catch (e) {
       log.push(`THROW ${e.message}`);
     }

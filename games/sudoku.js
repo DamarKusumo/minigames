@@ -213,11 +213,20 @@ export default {
         overlay.hidden = false;
         const h = document.createElement('h2');
         h.textContent = `Solved in ${seconds}s`;
+        overlay.appendChild(h);
+        const idx = SUDOKU_LEVELS.indexOf(level);
+        if (idx < SUDOKU_LEVELS.length - 1) {
+          const next = document.createElement('button');
+          next.className = 'btn';
+          next.textContent = 'Next Level →';
+          next.addEventListener('click', () => options.onNext());
+          overlay.appendChild(next);
+        }
         const btn = document.createElement('button');
         btn.className = 'btn';
         btn.textContent = 'New puzzle';
         btn.addEventListener('click', () => mountAgain());
-        overlay.append(h, btn);
+        overlay.appendChild(btn);
       }
       draw();
     }

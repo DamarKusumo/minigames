@@ -95,6 +95,11 @@ export function renderGame(game, levelId) {
     onCleared(levelCleared) {
       setUnlockedLevel(game.id, Math.max(getUnlockedLevel(game.id), levelCleared + 1));
     },
+    onNext() {
+      const i = game.levels.findIndex((l) => l.id === levelId);
+      const next = game.levels[i + 1];
+      if (next) renderGame(game, next.id);
+    },
   });
 }
 

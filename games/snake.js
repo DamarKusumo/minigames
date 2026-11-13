@@ -190,17 +190,20 @@ export default {
       if (state.food) cells[state.food.y * state.cols + state.food.x].className += ' food';
     }
 
-    function showOverlay(title, btnLabel, onBtn) {
+    function showOverlay(title, buttons) {
       overlay.innerHTML = '';
       overlay.className = 'overlay';
       overlay.hidden = false;
       const h = document.createElement('h2');
       h.textContent = title;
-      const btn = document.createElement('button');
-      btn.className = 'btn';
-      btn.textContent = btnLabel;
-      btn.addEventListener('click', onBtn);
-      overlay.append(h, btn);
+      overlay.appendChild(h);
+      for (const [label, fn] of buttons) {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.textContent = label;
+        btn.addEventListener('click', fn);
+        overlay.appendChild(btn);
+      }
     }
 
     function restart() {
@@ -216,7 +219,7 @@ export default {
       if (state.dead || state.cleared) return;
       step(state);
       if (state.dead) {
-        showOverlay('Game Over', 'Restart', restart);
+        showOverlay('Game Over', [['Restart', restart]]);
       } else {
         if (state.score > lastScore) {
           lastScore = state.score;
@@ -225,7 +228,11 @@ export default {
         if (state.cleared && !announcedClear) {
           announcedClear = true;
           options.onCleared(level.id);
-          showOverlay('Level Clear!', 'Play Again', restart);
+          const hasNext = LEVELS.indexOf(level) < LEVELS.length - 1;
+          showOverlay('Level Clear!', [
+            ...(hasNext ? [['Next Level →', () => options.onNext()]] : []),
+            ['Play Again', restart],
+          ]);
         }
       }
       draw();
