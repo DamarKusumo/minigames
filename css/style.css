@@ -144,6 +144,23 @@ h1, h2 {
 .cell.head { background: var(--neon); }
 .cell.food { background: #ff5566; border-radius: 50%; }
 
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-auto-rows: 56px;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.dpad-btn { font-size: 22px; padding: 0; touch-action: manipulation; }
+.dpad-btn:nth-child(1) { grid-column: 2; grid-row: 1; } /* snake ↑ */
+.dpad-btn:nth-child(2) { grid-column: 1; grid-row: 2; } /* snake ← */
+.dpad-btn:nth-child(3) { grid-column: 2; grid-row: 2; } /* snake ↓ */
+.dpad-btn:nth-child(4) { grid-column: 3; grid-row: 2; } /* snake → */
+.dpad-2 { grid-template-columns: repeat(2, 56px); }
+.dpad-2 .dpad-btn:nth-child(1) { grid-column: 1; grid-row: 1; } /* bounce ◀ */
+.dpad-2 .dpad-btn:nth-child(2) { grid-column: 2; grid-row: 1; } /* bounce ▶ */
+
 .overlay[hidden] { display: none; }
 
 .overlay {

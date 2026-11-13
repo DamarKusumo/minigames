@@ -27,6 +27,7 @@
       step('menu->levels', !!document.querySelector('.level-list') && btns().length === 6);
       btns()[0].click();
       step('levels->game', !!document.querySelector('.game') && !!document.querySelector('.snake-grid'));
+      step('snake arrow buttons', document.querySelectorAll('.dpad .dpad-btn').length === 4);
 
       // steer into the top wall: should die and show Game Over
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
@@ -42,6 +43,13 @@
       await sleep(2500);
       const ov2 = document.querySelector('.overlay');
       step('snake touch swipe steers', !!ov2 && !ov2.hidden && ov2.textContent.includes('Game Over'));
+
+      // on-screen arrow button steers too
+      ov2.querySelector('button').click(); // restart
+      [...document.querySelectorAll('.dpad .dpad-btn')].find((b) => b.textContent === '↑').click();
+      await sleep(2500);
+      const ov3 = document.querySelector('.overlay');
+      step('snake arrow button steers', !!ov3 && !ov3.hidden && ov3.textContent.includes('Game Over'));
 
       document.querySelector('#app > .btn').click();
       step('game->levels', !!document.querySelector('.level-list'));
@@ -61,6 +69,7 @@
       // bounce gameplay: enter, tick a few frames, still alive
       btns()[0].click();
       step('bounce game renders', !!document.querySelector('canvas'));
+      step('bounce arrow buttons', document.querySelectorAll('.dpad-2 .dpad-btn').length === 2);
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
       await sleep(120);
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));

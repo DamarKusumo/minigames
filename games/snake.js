@@ -153,7 +153,17 @@ export default {
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.hidden = true;
-    root.append(hud, grid, overlay);
+    const dpad = document.createElement('div');
+    dpad.className = 'dpad';
+    for (const [label, d] of [['↑', 'up'], ['←', 'left'], ['↓', 'down'], ['→', 'right']]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn dpad-btn';
+      b.textContent = label;
+      b.addEventListener('click', () => setDir(state, d));
+      dpad.appendChild(b);
+    }
+    root.append(hud, grid, dpad, overlay);
 
     const cellSize = 18; // fits a 320px phone (16 cols + gaps ≈ 300px)
     grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;

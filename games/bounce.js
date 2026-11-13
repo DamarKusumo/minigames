@@ -157,7 +157,21 @@ export default {
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.hidden = true;
-    root.append(hud, canvas, overlay);
+    const dpad = document.createElement('div');
+    dpad.className = 'dpad dpad-2';
+    for (const [label, d] of [['◀', -1], ['▶', 1]]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn dpad-btn';
+      b.textContent = label;
+      // hold to steer: press = move, release = stop
+      b.addEventListener('pointerdown', () => { dir = d; });
+      b.addEventListener('pointerup', () => { dir = 0; });
+      b.addEventListener('pointerleave', () => { dir = 0; });
+      b.addEventListener('pointercancel', () => { dir = 0; });
+      dpad.appendChild(b);
+    }
+    root.append(hud, canvas, dpad, overlay);
     const ctx = canvas.getContext('2d');
 
     function draw() {
