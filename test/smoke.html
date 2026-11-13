@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>smoke</title></head>
+<body>
+  <div id="app"></div>
+  <div id="result">PENDING</div>
+  <script type="module">
+    import { boot } from '../js/app.js';
+    const log = [];
+    const step = (name, ok) => log.push(`${ok ? 'OK' : 'FAIL'} ${name}`);
+    try {
+      boot();
+      step('menu', !!document.querySelector('.card-grid') && document.querySelectorAll('.card').length >= 3);
+      document.querySelector('.card').click();
+      step('menu->levels', !!document.querySelector('.level-list'));
+      document.querySelector('.level-list button').click();
+      step('levels->game', !!document.querySelector('.game'));
+      document.querySelector('.game .btn, #app > .btn').click();
+      step('game->levels', !!document.querySelector('.level-list'));
+      document.querySelector('#app > .btn').click();
+      step('levels->menu', !!document.querySelector('.card-grid'));
+    } catch (e) {
+      log.push(`THROW ${e.message}`);
+    }
+    document.getElementById('result').textContent = log.join(' | ');
+  </script>
+</body>
+</html>
