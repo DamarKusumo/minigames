@@ -58,6 +58,11 @@ export function createGame(level) {
   };
 }
 
+export function setPaddleX(state, x) {
+  const half = state.paddle.w / 2;
+  state.paddle.x = Math.min(Math.max(x, half), W - half);
+}
+
 export function movePaddle(state, dir) {
   const half = state.paddle.w / 2;
   state.paddle.x = Math.min(Math.max(state.paddle.x + dir * state.level.paddleSpeed, half), W - half);
@@ -231,6 +236,21 @@ export default {
       if (['ArrowLeft', 'ArrowRight', 'a', 'A', 'd', 'D'].includes(e.key)) dir = 0;
     }
 
+    // touch: drag a finger on the canvas to move the paddle
+    function touchX(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.changedTouches[0];
+      return (t.clientX - rect.left) * (W / rect.width);
+    }
+    function onTouchStart(e) {
+      setPaddleX(state, touchX(e));
+    }
+    function onTouchMove(e) {
+      setPaddleX(state, touchX(e));
+    }
+    canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: true });
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     const timer = setInterval(tick, 16);
@@ -240,6 +260,8 @@ export default {
       clearInterval(timer);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
     };
   },
 };

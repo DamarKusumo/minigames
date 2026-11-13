@@ -130,6 +130,12 @@ h1, h2 {
   background: #000;
   border: 2px solid var(--neon-dim);
   width: max-content;
+  touch-action: none; /* swipes steer, not scroll */
+}
+
+.game canvas {
+  touch-action: none; /* finger drag moves the paddle, not the page */
+  max-width: 100%;
 }
 
 .cell { background: #101024; }

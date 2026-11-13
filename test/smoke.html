@@ -12,6 +12,11 @@
     const step = (name, ok) => log.push(`${ok ? 'OK' : 'FAIL'} ${name}`);
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const btns = () => [...document.querySelectorAll('.level-list button')];
+    const fireTouch = (el, type, x, y) => {
+      const ev = new Event(type, { bubbles: true });
+      ev.changedTouches = [{ clientX: x, clientY: y }];
+      el.dispatchEvent(ev);
+    };
     try {
       resetStorage();
       boot();
@@ -30,6 +35,13 @@
       step('snake dies at wall', !!overlay && !overlay.hidden && overlay.textContent.includes('Game Over'));
       overlay.querySelector('button').click();
       step('restart hides overlay', document.querySelector('.overlay').hidden === true);
+
+      // touch: swipe up on the grid should steer (and die at the top again)
+      fireTouch(document.querySelector('.snake-grid'), 'touchstart', 100, 100);
+      fireTouch(document.querySelector('.snake-grid'), 'touchend', 100, 30);
+      await sleep(2500);
+      const ov2 = document.querySelector('.overlay');
+      step('snake touch swipe steers', !!ov2 && !ov2.hidden && ov2.textContent.includes('Game Over'));
 
       document.querySelector('#app > .btn').click();
       step('game->levels', !!document.querySelector('.level-list'));
@@ -53,6 +65,13 @@
       await sleep(120);
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
       step('bounce alive after ticks', document.querySelector('.overlay').hidden === true);
+
+      // touch: drag on the canvas must not throw or crash the game
+      const bcanvas = document.querySelector('canvas');
+      fireTouch(bcanvas, 'touchstart', 40, 200);
+      fireTouch(bcanvas, 'touchmove', 200, 200);
+      await sleep(80);
+      step('bounce touch drag alive', document.querySelector('.overlay').hidden === true);
       document.querySelector('#app > .btn').click(); // game -> levels
       document.querySelector('#app > .btn').click(); // levels -> menu
 

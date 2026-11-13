@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, setDir } from '../games/snake.js';
+import { LEVELS, createGame, step, setDir, swipeDir } from '../games/snake.js';
 
 const openLevel = { id: 0, label: 'test', target: 2, speedMs: 50, maze: ['....', '....', '....', '....'] };
 
@@ -46,6 +46,15 @@ test('reaching target sets cleared once, later steps leave state untouched', () 
   step(g);
   assert.equal(JSON.stringify(g), snapshot);
   assert.equal(g.cleared, true);
+});
+
+test('swipeDir maps a dominant axis to a direction, ignores tiny swipes', () => {
+  assert.equal(swipeDir(30, 5), 'right');
+  assert.equal(swipeDir(-40, 8), 'left');
+  assert.equal(swipeDir(6, 35), 'down');
+  assert.equal(swipeDir(4, -30), 'up');
+  assert.equal(swipeDir(8, 6), null); // below threshold
+  assert.equal(swipeDir(0, 0), null);
 });
 
 test('setDir rejects a 180° reverse into the neck', () => {

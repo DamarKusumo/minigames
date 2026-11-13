@@ -91,6 +91,14 @@ export function createGame(level) {
   return state;
 }
 
+// touch swipe → direction; dominant axis wins, tiny swipes ignored
+export function swipeDir(dx, dy) {
+  const threshold = 20;
+  if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return null;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'right' : 'left';
+  return dy > 0 ? 'down' : 'up';
+}
+
 export function setDir(state, dir) {
   if (!DIRS[dir] || state.dead || state.cleared) return;
   if (dir === OPPOSITE[state.dir]) return; // no 180° into the neck
@@ -147,7 +155,7 @@ export default {
     overlay.hidden = true;
     root.append(hud, grid, overlay);
 
-    const cellSize = 22;
+    const cellSize = 18; // fits a 320px phone (16 cols + gaps ≈ 300px)
     grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
     grid.style.gridTemplateRows = `repeat(${state.rows}, ${cellSize}px)`;
     const cells = [];
@@ -226,6 +234,22 @@ export default {
       }
     }
 
+    // touch: swipe anywhere on the grid to steer
+    let touchStart = null;
+    function onTouchStart(e) {
+      const t = e.changedTouches[0];
+      touchStart = { x: t.clientX, y: t.clientY };
+    }
+    function onTouchEnd(e) {
+      if (!touchStart) return;
+      const t = e.changedTouches[0];
+      const dir = swipeDir(t.clientX - touchStart.x, t.clientY - touchStart.y);
+      if (dir) setDir(state, dir);
+      touchStart = null;
+    }
+    grid.addEventListener('touchstart', onTouchStart, { passive: true });
+    grid.addEventListener('touchend', onTouchEnd, { passive: true });
+
     window.addEventListener('keydown', onKey);
     const timer = setInterval(tick, level.speedMs);
     draw();
@@ -233,6 +257,8 @@ export default {
     return () => {
       clearInterval(timer);
       window.removeEventListener('keydown', onKey);
+      grid.removeEventListener('touchstart', onTouchStart);
+      grid.removeEventListener('touchend', onTouchEnd);
     };
   },
 };

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, movePaddle, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
+import { LEVELS, createGame, step, movePaddle, setPaddleX, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
 
 const singleBrick = { id: 99, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['1...............'] };
 const singleTwo = { id: 98, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['2...............'] };
@@ -57,6 +57,16 @@ test('paddle clamps at both edges', () => {
   const right = g.paddle.x;
   assert.equal(right, W - PADDLE_W / 2);
   assert.ok(left < right);
+});
+
+test('setPaddleX clamps to field edges (touch drag)', () => {
+  const g = createGame(LEVELS[0]);
+  setPaddleX(g, -50);
+  assert.equal(g.paddle.x, PADDLE_W / 2);
+  setPaddleX(g, 9999);
+  assert.equal(g.paddle.x, W - PADDLE_W / 2);
+  setPaddleX(g, 100);
+  assert.equal(g.paddle.x, 100);
 });
 
 test('ball below bottom with 0 lives left is dead', () => {
