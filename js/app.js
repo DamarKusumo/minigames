@@ -103,4 +103,9 @@ export function boot(appRoot = document.getElementById('app')) {
   renderMenu();
 }
 
-if (typeof document !== 'undefined') boot();
+if (typeof document !== 'undefined') {
+  boot();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
