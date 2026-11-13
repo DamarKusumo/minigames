@@ -7,11 +7,13 @@
   <script type="module">
     import { boot } from '../js/app.js';
     import { solve } from '../games/sudoku.js';
+    import { resetStorage, setUnlockedLevel, getUnlockedLevel } from '../js/storage.js';
     const log = [];
     const step = (name, ok) => log.push(`${ok ? 'OK' : 'FAIL'} ${name}`);
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const btns = () => [...document.querySelectorAll('.level-list button')];
     try {
+      resetStorage();
       boot();
       step('menu', !!document.querySelector('.card-grid') && document.querySelectorAll('.card').length >= 3);
 
@@ -34,19 +36,25 @@
       document.querySelector('#app > .btn').click();
       step('levels->menu', !!document.querySelector('.card-grid'));
 
-      // unlock wiring via Bounce (third card, placeholder with clear button)
+      // lock rendering via Bounce (third card): locked by default, unlocks via storage
       document.querySelectorAll('.card')[2].click();
       step('level2 starts locked', btns()[1].disabled === true);
-      btns()[0].click();
-      [...document.querySelectorAll('button')].find((b) => b.textContent === 'clear').click();
-      if (!document.querySelector('.level-list')) document.querySelector('#app > .btn').click();
-      step('level2 unlocked after clear', btns()[1].disabled === false);
+      setUnlockedLevel('bounce', 2);
       document.querySelector('#app > .btn').click(); // levels -> menu
       document.querySelectorAll('.card')[2].click(); // menu -> levels (fresh render reads storage)
-      step('unlock persists on re-render', btns()[1].disabled === false);
+      step('unlock renders after storage change', btns()[1].disabled === false);
 
-      // back to menu first, then sudoku (middle card): free choice of difficulty, playable, win path
-      document.querySelector('#app > .btn').click();
+      // bounce gameplay: enter, tick a few frames, still alive
+      btns()[0].click();
+      step('bounce game renders', !!document.querySelector('canvas'));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+      await sleep(120);
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
+      step('bounce alive after ticks', document.querySelector('.overlay').hidden === true);
+      document.querySelector('#app > .btn').click(); // game -> levels
+      document.querySelector('#app > .btn').click(); // levels -> menu
+
+      // sudoku (middle card): free choice of difficulty, playable, win path
       document.querySelectorAll('.card')[1].click();
       step('sudoku difficulties all unlocked', btns().length === 3 && btns().every((b) => !b.disabled));
       btns()[0].click();
@@ -65,6 +73,7 @@
       }
       const so = document.querySelector('.overlay');
       step('sudoku win overlay', !!so && !so.hidden && so.textContent.includes('Solved'));
+      step('sudoku clear wired to storage', getUnlockedLevel('sudoku') >= 2);
     } catch (e) {
       log.push(`THROW ${e.message}`);
     }

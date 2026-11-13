@@ -154,6 +154,7 @@ export default {
     const pad = document.createElement('div');
     pad.className = 'sudoku-pad';
     const overlay = document.createElement('div');
+    overlay.className = 'overlay';
     overlay.hidden = true;
     root.append(hud, grid, pad, overlay);
 

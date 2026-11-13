@@ -143,6 +143,7 @@ export default {
     const grid = document.createElement('div');
     grid.className = 'snake-grid';
     const overlay = document.createElement('div');
+    overlay.className = 'overlay';
     overlay.hidden = true;
     root.append(hud, grid, overlay);
 
