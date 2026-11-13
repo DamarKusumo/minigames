@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, setDir, swipeDir } from '../games/snake.js';
+import { LEVELS, createGame, step, setDir, swipeDir, cellSizeFor } from '../games/snake.js';
 
 const openLevel = { id: 0, label: 'test', target: 2, speedMs: 50, maze: ['....', '....', '....', '....'] };
 
@@ -55,6 +55,14 @@ test('swipeDir maps a dominant axis to a direction, ignores tiny swipes', () => 
   assert.equal(swipeDir(4, -30), 'up');
   assert.equal(swipeDir(8, 6), null); // below threshold
   assert.equal(swipeDir(0, 0), null);
+});
+
+test('cellSizeFor fits the viewport on phones and grows on desktop', () => {
+  const cols = 16;
+  const phone = cellSizeFor(320, cols);
+  assert.ok(phone * cols + cols <= 320 + 32, `phone grid ${phone * cols}px must fit 320px screen`);
+  assert.equal(cellSizeFor(1440, cols), 34); // capped so desktop isn't absurd
+  assert.ok(cellSizeFor(400, cols) >= 18); // never smaller than the mobile floor
 });
 
 test('setDir rejects a 180° reverse into the neck', () => {

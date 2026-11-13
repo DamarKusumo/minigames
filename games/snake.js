@@ -91,6 +91,11 @@ export function createGame(level) {
   return state;
 }
 
+// grid cell size from viewport: 18px floor (mobile), 34px cap (desktop)
+export function cellSizeFor(innerWidth, cols) {
+  return Math.max(18, Math.min(34, Math.floor((Math.min(innerWidth, 900) - 48) / cols)));
+}
+
 // touch swipe → direction; dominant axis wins, tiny swipes ignored
 export function swipeDir(dx, dy) {
   const threshold = 20;
@@ -165,7 +170,7 @@ export default {
     }
     root.append(hud, grid, dpad, overlay);
 
-    const cellSize = 18; // fits a 320px phone (16 cols + gaps ≈ 300px)
+    const cellSize = cellSizeFor(window.innerWidth, state.cols);
     grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
     grid.style.gridTemplateRows = `repeat(${state.rows}, ${cellSize}px)`;
     const cells = [];

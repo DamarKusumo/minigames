@@ -124,6 +124,12 @@ h1, h2 {
 .sudoku-pad { display: flex; gap: 6px; flex-wrap: wrap; max-width: 420px; }
 .sudoku-pad .btn { font-size: 18px; min-width: 42px; }
 
+/* desktop: bigger sudoku so the whole page doesn't feel mini */
+@media (min-width: 768px) {
+  .sudoku-grid { grid-template-columns: repeat(9, 56px); }
+  .sudoku-cell { width: 56px; height: 56px; font-size: 24px; }
+}
+
 .snake-grid {
   display: grid;
   gap: 1px;
@@ -133,9 +139,18 @@ h1, h2 {
   touch-action: none; /* swipes steer, not scroll */
 }
 
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .game canvas {
   touch-action: none; /* finger drag moves the paddle, not the page */
-  max-width: 100%;
+  width: min(100%, 480px); /* scales the 320px board up on desktop */
+  height: auto;
+  display: block;
+  border: 2px solid var(--neon-dim);
 }
 
 .cell { background: #101024; }
@@ -149,7 +164,8 @@ h1, h2 {
   grid-template-columns: repeat(3, 56px);
   grid-auto-rows: 56px;
   gap: 6px;
-  margin-top: 14px;
+  margin: 14px auto 0;
+  width: max-content;
 }
 
 .dpad-btn { font-size: 22px; padding: 0; touch-action: manipulation; }
