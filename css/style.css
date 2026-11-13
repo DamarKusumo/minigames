@@ -96,6 +96,33 @@ h1, h2 {
   color: var(--neon);
 }
 
+.sudoku-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 42px);
+  border: 2px solid var(--neon);
+  width: max-content;
+  margin-bottom: 12px;
+}
+
+.sudoku-cell {
+  width: 42px;
+  height: 42px;
+  background: var(--panel);
+  border: 1px solid #2a2a4a;
+  color: var(--text);
+  font: 18px/1 "Courier New", monospace;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sudoku-cell.band-top { border-top: 2px solid var(--neon-dim); }
+.sudoku-cell.band-left { border-left: 2px solid var(--neon-dim); }
+.sudoku-cell.selected { outline: 2px solid var(--neon); outline-offset: -2px; }
+.sudoku-cell.conflict { color: #ff5566; background: #2a1020; }
+
+.sudoku-pad { display: flex; gap: 6px; flex-wrap: wrap; max-width: 420px; }
+.sudoku-pad .btn { font-size: 18px; min-width: 42px; }
+
 .snake-grid {
   display: grid;
   gap: 1px;

@@ -6,6 +6,7 @@
   <div id="result">PENDING</div>
   <script type="module">
     import { boot } from '../js/app.js';
+    import { solve } from '../games/sudoku.js';
     const log = [];
     const step = (name, ok) => log.push(`${ok ? 'OK' : 'FAIL'} ${name}`);
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -43,6 +44,27 @@
       document.querySelector('#app > .btn').click(); // levels -> menu
       document.querySelectorAll('.card')[2].click(); // menu -> levels (fresh render reads storage)
       step('unlock persists on re-render', btns()[1].disabled === false);
+
+      // back to menu first, then sudoku (middle card): free choice of difficulty, playable, win path
+      document.querySelector('#app > .btn').click();
+      document.querySelectorAll('.card')[1].click();
+      step('sudoku difficulties all unlocked', btns().length === 3 && btns().every((b) => !b.disabled));
+      btns()[0].click();
+      const scells = () => [...document.querySelectorAll('.sudoku-cell')];
+      step('sudoku grid is 81 cells', scells().length === 81);
+      const grid = scells().map((c) => (c.textContent === '' ? null : Number(c.textContent)));
+      const solved = solve(grid);
+      step('sudoku solver fills grid', !!solved);
+      if (solved) {
+        solved.forEach((v, i) => {
+          if (grid[i] === null) {
+            scells()[i].click();
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: String(v) }));
+          }
+        });
+      }
+      const so = document.querySelector('.overlay');
+      step('sudoku win overlay', !!so && !so.hidden && so.textContent.includes('Solved'));
     } catch (e) {
       log.push(`THROW ${e.message}`);
     }

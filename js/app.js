@@ -80,7 +80,11 @@ export function renderGame(game, levelId) {
     level: levelId,
     onScore(best) {
       const current = getHighScore(game.id, levelId);
-      if (current === null || best > current) setHighScore(game.id, levelId, best);
+      // sudoku times are lower-is-better; everyone else scores higher-is-better
+      const improved = game.scoreIsLowerBetter
+        ? current === null || best < current
+        : current === null || best > current;
+      if (improved) setHighScore(game.id, levelId, best);
     },
     // no auto-navigation on clear: the game's own overlay stays visible;
     // unlock shows when the player presses Back to level select
