@@ -8,33 +8,41 @@
     import { boot } from '../js/app.js';
     const log = [];
     const step = (name, ok) => log.push(`${ok ? 'OK' : 'FAIL'} ${name}`);
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const btns = () => [...document.querySelectorAll('.level-list button')];
     try {
       boot();
       step('menu', !!document.querySelector('.card-grid') && document.querySelectorAll('.card').length >= 3);
-      document.querySelector('.card').click();
-      step('menu->levels', !!document.querySelector('.level-list'));
-      document.querySelector('.level-list button').click();
-      step('levels->game', !!document.querySelector('.game'));
-      document.querySelector('.game .btn, #app > .btn').click();
+
+      // view wiring via Snake (first card, now a real game)
+      document.querySelectorAll('.card')[0].click();
+      step('menu->levels', !!document.querySelector('.level-list') && btns().length === 6);
+      btns()[0].click();
+      step('levels->game', !!document.querySelector('.game') && !!document.querySelector('.snake-grid'));
+
+      // steer into the top wall: should die and show Game Over
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      await sleep(2500); // ~12 ticks x 200ms reaches the wall from mid-grid
+      const overlay = document.querySelector('.overlay');
+      step('snake dies at wall', !!overlay && !overlay.hidden && overlay.textContent.includes('Game Over'));
+      overlay.querySelector('button').click();
+      step('restart hides overlay', document.querySelector('.overlay').hidden === true);
+
+      document.querySelector('#app > .btn').click();
       step('game->levels', !!document.querySelector('.level-list'));
       document.querySelector('#app > .btn').click();
       step('levels->menu', !!document.querySelector('.card-grid'));
 
-      // unlock wiring: snake is the first card
-      document.querySelector('.card').click(); // -> snake level select
-      const btns = () => [...document.querySelectorAll('.level-list button')];
+      // unlock wiring via Bounce (third card, placeholder with clear button)
+      document.querySelectorAll('.card')[2].click();
       step('level2 starts locked', btns()[1].disabled === true);
-      btns()[0].click(); // -> game level 1
-      [...document.querySelectorAll('button')].find(b => b.textContent === 'clear').click();
-      // if the shell refreshes on clear we are already on level select; otherwise go back
-      if (!document.querySelector('.level-list')) {
-        document.querySelector('#app > .btn').click();
-      }
+      btns()[0].click();
+      [...document.querySelectorAll('button')].find((b) => b.textContent === 'clear').click();
+      if (!document.querySelector('.level-list')) document.querySelector('#app > .btn').click();
       step('level2 unlocked after clear', btns()[1].disabled === false);
-      // leave and re-enter: a fresh render reads storage again (reload equivalent)
       document.querySelector('#app > .btn').click(); // levels -> menu
-      document.querySelector('.card').click();       // menu -> levels
-      step('level2 unlock persists on re-render', btns()[1].disabled === false);
+      document.querySelectorAll('.card')[2].click(); // menu -> levels (fresh render reads storage)
+      step('unlock persists on re-render', btns()[1].disabled === false);
     } catch (e) {
       log.push(`THROW ${e.message}`);
     }
