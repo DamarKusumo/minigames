@@ -1,6 +1,7 @@
 import snake from '../games/snake.js';
 import sudoku from '../games/sudoku.js';
 import bounce from '../games/bounce.js';
+import { getHighScore, setHighScore, getUnlockedLevel, setUnlockedLevel } from './storage.js';
 
 export const games = [snake, sudoku, bounce];
 
@@ -52,10 +53,16 @@ export function renderLevelSelect(game) {
   root.appendChild(back);
   root.appendChild(el('h2', '', game.name));
   const list = el('ul', 'level-list');
+  const unlocked = game.freeChoice ? Infinity : getUnlockedLevel(game.id);
   for (const level of game.levels) {
     const item = el('li');
     const btn = el('button', '', level.label);
-    btn.addEventListener('click', () => renderGame(game, level.id));
+    if (level.id > unlocked) {
+      btn.disabled = true;
+      btn.textContent += ' 🔒';
+    } else {
+      btn.addEventListener('click', () => renderGame(game, level.id));
+    }
     item.appendChild(btn);
     list.appendChild(item);
   }
@@ -69,11 +76,17 @@ export function renderGame(game, levelId) {
   root.appendChild(back);
   const container = el('div', 'game');
   root.appendChild(container);
-  // onScore/onCleared wired to storage in Task 3
   cleanup = game.mount(container, {
     level: levelId,
-    onScore() {},
-    onCleared() {},
+    onScore(best) {
+      const current = getHighScore(game.id, levelId);
+      if (current === null || best > current) setHighScore(game.id, levelId, best);
+    },
+    // no auto-navigation on clear: the game's own overlay stays visible;
+    // unlock shows when the player presses Back to level select
+    onCleared(levelCleared) {
+      setUnlockedLevel(game.id, Math.max(getUnlockedLevel(game.id), levelCleared + 1));
+    },
   });
 }
 

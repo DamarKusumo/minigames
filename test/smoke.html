@@ -19,6 +19,22 @@
       step('game->levels', !!document.querySelector('.level-list'));
       document.querySelector('#app > .btn').click();
       step('levels->menu', !!document.querySelector('.card-grid'));
+
+      // unlock wiring: snake is the first card
+      document.querySelector('.card').click(); // -> snake level select
+      const btns = () => [...document.querySelectorAll('.level-list button')];
+      step('level2 starts locked', btns()[1].disabled === true);
+      btns()[0].click(); // -> game level 1
+      [...document.querySelectorAll('button')].find(b => b.textContent === 'clear').click();
+      // if the shell refreshes on clear we are already on level select; otherwise go back
+      if (!document.querySelector('.level-list')) {
+        document.querySelector('#app > .btn').click();
+      }
+      step('level2 unlocked after clear', btns()[1].disabled === false);
+      // leave and re-enter: a fresh render reads storage again (reload equivalent)
+      document.querySelector('#app > .btn').click(); // levels -> menu
+      document.querySelector('.card').click();       // menu -> levels
+      step('level2 unlock persists on re-render', btns()[1].disabled === false);
     } catch (e) {
       log.push(`THROW ${e.message}`);
     }

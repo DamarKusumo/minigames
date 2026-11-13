@@ -33,5 +33,5 @@ Nothing else changes.
 ## Tests
 
 ```bash
-node --test test/
+node --test test/*.test.js
 ```
