@@ -45,12 +45,21 @@ export const LEVELS = [
   ] },
 ];
 
-export function createGame(level) {
+export const DROP_TYPES = ['wide', 'multi', 'slow', 'extra'];
+
+export function dropType(rng) {
+  return DROP_TYPES[Math.floor(rng() * DROP_TYPES.length)];
+}
+
+export function createGame(level, rng = Math.random) {
   return {
     level,
+    rng,
     bricks: level.bricks.map((row) => [...row].map((ch) => (ch === '.' ? 0 : Number(ch)))),
     balls: [{ x: W / 2, y: H - 60, dx: level.ballSpeed, dy: -level.ballSpeed }],
     paddle: { x: W / 2, w: PADDLE_W },
+    drops: [],
+    timers: { wide: 0, slow: 0 },
     score: 0,
     lives: 3,
     cleared: false,
@@ -114,16 +123,54 @@ function hitBrick(state, b) {
   state.bricks[row][col] = v - 1;
   state.score += 1;
   b.dy = -b.dy;
+  if (v - 1 === 0 && state.rng() < 0.25) {
+    state.drops.push({ x: col * CELL + CELL / 2, y: row * CELL + CELL / 2, type: dropType(state.rng) });
+  }
   if (!state.bricks.some((r) => r.some((c) => c > 0))) state.cleared = true;
   return true;
 }
 
+// falling skill drops: catch on paddle, discard past the bottom
+export function fallDrops(state) {
+  const keep = [];
+  for (const d of state.drops) {
+    d.y += 1.5;
+    const onPaddle = d.y >= PADDLE_Y && d.y <= PADDLE_Y + PADDLE_H + 8 &&
+      Math.abs(d.x - state.paddle.x) <= state.paddle.w / 2 + 8;
+    if (onPaddle) {
+      applyDrop(state, d);
+    } else if (d.y <= H) {
+      keep.push(d);
+    }
+  }
+  state.drops = keep;
+}
+
+function applyDrop(state, d) {
+  if (d.type === 'wide') {
+    state.timers.wide = 625;
+    state.paddle.w = 80;
+  } else if (d.type === 'slow') {
+    state.timers.slow = 500;
+  } else if (d.type === 'multi') {
+    splitBalls(state);
+  } else if (d.type === 'extra') {
+    state.lives += 1;
+  }
+}
+
 export function step(state) {
   if (state.dead || state.cleared) return state;
+  // effect timers drive paddle width and ball speed this tick (never mutate base dx/dy)
+  state.timers.wide = Math.max(0, state.timers.wide - 1);
+  state.timers.slow = Math.max(0, state.timers.slow - 1);
+  state.paddle.w = state.timers.wide > 0 ? 80 : PADDLE_W;
+  state.paddle.x = Math.min(Math.max(state.paddle.x, state.paddle.w / 2), W - state.paddle.w / 2);
+  const speed = state.timers.slow > 0 ? 0.6 : 1;
   const keep = [];
   for (const b of state.balls) {
-    b.x += b.dx;
-    b.y += b.dy;
+    b.x += b.dx * speed;
+    b.y += b.dy * speed;
 
     if (b.x < BALL_R) {
       b.x = BALL_R;

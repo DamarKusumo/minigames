@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, fallBricks, splitBalls, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
+import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, fallBricks, splitBalls, DROP_TYPES, dropType, fallDrops, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
 
 const singleBrick = { id: 99, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['1...............'] };
 const singleTwo = { id: 98, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['2...............'] };
@@ -156,4 +156,72 @@ test('last life lost with all balls gone is dead', () => {
   assert.equal(g.dead, true);
   assert.equal(g.deadReason, 'balls');
   assert.equal(g.lives, 0);
+});
+
+test('dropType only returns known skill types', () => {
+  assert.equal(dropType(() => 0), 'wide');
+  assert.ok(DROP_TYPES.includes(dropType(() => 0.99)));
+});
+
+test('destroying a brick may spawn a drop (seeded rng)', () => {
+  const g = createGame(singleBrick, () => 0); // always spawn, always 'wide'
+  g.balls = [{ x: 10, y: 10, dx: 0, dy: 2 }];
+  step(g);
+  assert.equal(g.drops.length, 1);
+  assert.equal(g.drops[0].type, 'wide');
+});
+
+test('rng >= 0.25 never spawns', () => {
+  const g = createGame(singleBrick, () => 0.5);
+  g.balls = [{ x: 10, y: 10, dx: 0, dy: 2 }];
+  step(g);
+  assert.equal(g.drops.length, 0);
+});
+
+test('catching wide widens the paddle, expiry restores it', () => {
+  const g = createGame(singleBrick);
+  g.drops = [{ x: g.paddle.x, y: PADDLE_Y, type: 'wide' }];
+  fallDrops(g);
+  assert.equal(g.timers.wide, 625);
+  assert.equal(g.paddle.w, 80);
+  g.timers.wide = 1;
+  step(g);
+  assert.equal(g.timers.wide, 0);
+  assert.equal(g.paddle.w, PADDLE_W);
+});
+
+test('wide expiry re-clamps paddle', () => {
+  const g = createGame(singleBrick);
+  g.paddle.w = 80;
+  setPaddleX(g, 9999); // x = W - 40, valid for w=80 only
+  g.timers.wide = 1;
+  step(g); // wide expires → w=48; x must be pulled back into range
+  assert.equal(g.paddle.w, PADDLE_W);
+  assert.ok(g.paddle.x <= W - g.paddle.w / 2, `x=${g.paddle.x} exceeds right edge`);
+  assert.ok(g.paddle.x >= g.paddle.w / 2, `x=${g.paddle.x} under left edge`);
+});
+
+test('slow factor leaves dx unchanged', () => {
+  const g = createGame(singleBrick);
+  const before = g.balls[0].dx;
+  g.timers.slow = 500;
+  step(g);
+  assert.equal(g.balls[0].dx, before);
+  assert.equal(g.timers.slow, 499);
+});
+
+test('extra life applies immediately', () => {
+  const g = createGame(singleBrick);
+  g.lives = 3;
+  g.drops = [{ x: g.paddle.x, y: PADDLE_Y, type: 'extra' }];
+  fallDrops(g);
+  assert.equal(g.lives, 4);
+  assert.equal(g.drops.length, 0);
+});
+
+test('missed drop falls off and is discarded', () => {
+  const g = createGame(singleBrick);
+  g.drops = [{ x: 10, y: H + 1, type: 'extra' }];
+  fallDrops(g);
+  assert.equal(g.drops.length, 0);
 });
