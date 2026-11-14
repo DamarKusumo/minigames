@@ -175,10 +175,12 @@ export default {
     pauseBtn.type = 'button';
     pauseBtn.className = 'btn';
     pauseBtn.textContent = '⏸ Pause';
-    pauseBtn.addEventListener('click', () => {
+    function togglePause() {
+      if (!overlay.hidden) return; // result screen owns the pause state
       paused = !paused;
       pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
-    });
+    }
+    pauseBtn.addEventListener('click', togglePause);
     const grid = document.createElement('div');
     grid.className = 'snake-grid';
     const overlay = document.createElement('div');
@@ -194,7 +196,7 @@ export default {
       b.addEventListener('click', () => setDir(state, d));
       dpad.appendChild(b);
     }
-    root.append(hud, pauseBtn, grid, dpad, overlay);
+    root.append(pauseBtn, hud, grid, dpad, overlay);
 
     const cells = [];
     for (let i = 0; i < state.cols * state.rows; i++) {
@@ -206,7 +208,10 @@ export default {
 
     // size the board to exactly the space left after hud/buttons — no page scroll
     function fitGrid() {
-      const chrome = hud.offsetHeight + pauseBtn.offsetHeight + dpad.offsetHeight + 32;
+      const chrome = hud.offsetHeight + pauseBtn.offsetHeight + dpad.offsetHeight
+        + parseFloat(getComputedStyle(dpad).marginTop)
+        + parseFloat(getComputedStyle(root.parentElement).paddingBottom)
+        + 32;
       const availH = Math.max(60, window.innerHeight - root.getBoundingClientRect().top - chrome);
       const availW = root.clientWidth;
       // -16 for grid gaps + border, which cellSizeFor's rows math doesn't count
@@ -214,7 +219,6 @@ export default {
       grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cell}px)`;
       grid.style.gridTemplateRows = `repeat(${state.rows}, ${cell}px)`;
     }
-    fitGrid();
     window.addEventListener('resize', fitGrid);
 
     function draw() {
@@ -284,6 +288,12 @@ export default {
     }
 
     function onKey(e) {
+  if (e.key === ' ') {
+    if (document.activeElement instanceof HTMLButtonElement) return;
+    e.preventDefault();
+    togglePause();
+    return;
+  }
       const map = {
         ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
         w: 'up', s: 'down', a: 'left', d: 'right',
@@ -315,6 +325,7 @@ export default {
     window.addEventListener('keydown', onKey);
     const timer = setInterval(tick, level.speedMs);
     draw();
+    fitGrid(); // after draw so the hud has its real height
 
     return () => {
       clearInterval(timer);

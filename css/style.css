@@ -136,6 +136,12 @@ h1, h2 {
   .sudoku-cell { width: 34px; height: 34px; font-size: 16px; }
 }
 
+/* very short viewports: compact again so pad + grid still fit with no scroll */
+@media (max-height: 580px) {
+  .sudoku-grid { grid-template-columns: repeat(9, 26px); }
+  .sudoku-cell { width: 26px; height: 26px; font-size: 14px; }
+}
+
 .snake-grid {
   display: grid;
   gap: 1px;

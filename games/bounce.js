@@ -161,10 +161,12 @@ export default {
     pauseBtn.type = 'button';
     pauseBtn.className = 'btn';
     pauseBtn.textContent = '⏸ Pause';
-    pauseBtn.addEventListener('click', () => {
+    function togglePause() {
+      if (!overlay.hidden) return; // result screen owns the pause state
       paused = !paused;
       pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
-    });
+    }
+    pauseBtn.addEventListener('click', togglePause);
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
@@ -185,18 +187,20 @@ export default {
       b.addEventListener('pointercancel', () => { dir = 0; });
       dpad.appendChild(b);
     }
-    root.append(hud, pauseBtn, canvas, dpad, overlay);
+    root.append(pauseBtn, hud, canvas, dpad, overlay);
     const ctx = canvas.getContext('2d');
 
     // size the canvas to exactly the space left after hud/buttons — no page scroll
     function fit() {
-      const chrome = hud.offsetHeight + pauseBtn.offsetHeight + dpad.offsetHeight + 32;
+      const chrome = hud.offsetHeight + pauseBtn.offsetHeight + dpad.offsetHeight
+        + parseFloat(getComputedStyle(dpad).marginTop)
+        + parseFloat(getComputedStyle(root.parentElement).paddingBottom)
+        + 32;
       const availH = Math.max(80, window.innerHeight - root.getBoundingClientRect().top - chrome);
       const s = fitScale(root.clientWidth, availH);
       canvas.style.width = `${Math.floor(W * s)}px`;
       canvas.style.height = `${Math.floor(H * s)}px`;
     }
-    fit();
     window.addEventListener('resize', fit);
 
     function draw() {
@@ -274,6 +278,12 @@ export default {
     }
 
     function onKeyDown(e) {
+  if (e.key === ' ') {
+    if (document.activeElement instanceof HTMLButtonElement) return;
+    e.preventDefault();
+    togglePause();
+    return;
+  }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault();
         dir = -1;
@@ -305,6 +315,7 @@ export default {
     window.addEventListener('keyup', onKeyUp);
     const timer = setInterval(tick, 16);
     draw();
+    fit(); // after draw so the hud has its real height
 
     return () => {
       clearInterval(timer);

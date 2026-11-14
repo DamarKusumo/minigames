@@ -33,6 +33,15 @@
       // pause freezes the snake; continue resumes
       const sPause = [...document.querySelectorAll('#app button')].find((b) => b.textContent.includes('Pause'));
       step('snake has pause button', !!sPause);
+
+      // space key toggles pause (buttons focused → native click, so test from body)
+      const pauseText = () => [...document.querySelectorAll('#app button')]
+        .find((b) => b.textContent.includes('Pause') || b.textContent.includes('Continue')).textContent;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+      step('space pauses', pauseText().includes('Continue'));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+      step('space resumes', pauseText().includes('Pause'));
+
       if (sPause) {
         sPause.click();
         await sleep(2500); // unpaused, it would have hit a wall by now
@@ -107,6 +116,7 @@
       btns()[0].click();
       const scells = () => [...document.querySelectorAll('.sudoku-cell')];
       step('sudoku grid is 81 cells', scells().length === 81);
+      step('sudoku view fits viewport', document.documentElement.scrollHeight <= window.innerHeight + 2);
       // pause freezes the timer
       const uPause = [...document.querySelectorAll('#app button')].find((b) => b.textContent.includes('Pause'));
       const hudBefore = document.querySelector('.hud').textContent;

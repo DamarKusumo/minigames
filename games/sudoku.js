@@ -155,10 +155,12 @@ export default {
     pauseBtn.type = 'button';
     pauseBtn.className = 'btn';
     pauseBtn.textContent = '⏸ Pause';
-    pauseBtn.addEventListener('click', () => {
+    function togglePause() {
+      if (!overlay.hidden) return; // result screen owns the pause state
       paused = !paused;
       pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
-    });
+    }
+    pauseBtn.addEventListener('click', togglePause);
     const grid = document.createElement('div');
     grid.className = 'sudoku-grid';
     const pad = document.createElement('div');
@@ -166,7 +168,7 @@ export default {
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.hidden = true;
-    root.append(hud, pauseBtn, grid, pad, overlay);
+    root.append(pauseBtn, hud, grid, pad, overlay);
 
     const cells = [];
     for (let i = 0; i < 81; i++) {
@@ -271,6 +273,12 @@ export default {
     pad.appendChild(clearBtn);
 
     function onKey(e) {
+  if (e.key === ' ') {
+    if (document.activeElement instanceof HTMLButtonElement) return;
+    e.preventDefault();
+    togglePause();
+    return;
+  }
       if (won) return;
       if (e.key >= '1' && e.key <= '9') setValue(Number(e.key));
       else if (e.key === 'Backspace' || e.key === 'Delete') setValue(null);
