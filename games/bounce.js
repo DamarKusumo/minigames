@@ -59,7 +59,7 @@ export function createGame(level, rng = Math.random) {
     balls: [{ x: W / 2, y: H - 60, dx: level.ballSpeed, dy: -level.ballSpeed }],
     paddle: { x: W / 2, w: PADDLE_W },
     drops: [],
-    timers: { wide: 0, slow: 0 },
+    timers: { wide: 0, slow: 0, multi: 0 },
     score: 0,
     lives: 3,
     cleared: false,
@@ -153,6 +153,7 @@ function applyDrop(state, d) {
   } else if (d.type === 'slow') {
     state.timers.slow = 500;
   } else if (d.type === 'multi') {
+    state.timers.multi = 625;
     splitBalls(state);
   } else if (d.type === 'extra') {
     state.lives += 1;
@@ -164,6 +165,11 @@ export function step(state) {
   // effect timers drive paddle width and ball speed this tick (never mutate base dx/dy)
   state.timers.wide = Math.max(0, state.timers.wide - 1);
   state.timers.slow = Math.max(0, state.timers.slow - 1);
+  const multiWasOn = state.timers.multi > 0;
+  state.timers.multi = Math.max(0, state.timers.multi - 1);
+  if (multiWasOn && state.timers.multi === 0 && state.balls.length > 1) {
+    state.balls = [state.balls[0]]; // multi ends after 10s
+  }
   state.paddle.w = state.timers.wide > 0 ? 80 : PADDLE_W;
   state.paddle.x = Math.min(Math.max(state.paddle.x, state.paddle.w / 2), W - state.paddle.w / 2);
   const speed = state.timers.slow > 0 ? 0.6 : 1;

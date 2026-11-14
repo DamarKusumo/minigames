@@ -225,3 +225,27 @@ test('missed drop falls off and is discarded', () => {
   fallDrops(g);
   assert.equal(g.drops.length, 0);
 });
+
+test('multi catch starts a 10s timer and expiry reverts to one ball', () => {
+  const g = createGame(singleBrick);
+  splitBalls(g);
+  g.drops = [{ x: g.paddle.x, y: PADDLE_Y, type: 'multi' }];
+  fallDrops(g);
+  assert.equal(g.timers.multi, 625);
+  assert.equal(g.balls.length, 3);
+  // burn the timer down to 1 tick, then one step expires it
+  g.timers.multi = 1;
+  step(g);
+  assert.equal(g.timers.multi, 0);
+  assert.equal(g.balls.length, 1);
+});
+
+test('wide expiry pulls an out-of-range paddle back in', () => {
+  const g = createGame(singleBrick);
+  g.paddle.x = 310; // outside [24, 296] for w=48 — only the clamp can fix it
+  g.timers.wide = 1;
+  step(g);
+  assert.equal(g.paddle.w, PADDLE_W);
+  assert.ok(g.paddle.x <= W - g.paddle.w / 2, `x=${g.paddle.x} not clamped`);
+  assert.ok(g.paddle.x >= g.paddle.w / 2, `x=${g.paddle.x} not clamped`);
+});
