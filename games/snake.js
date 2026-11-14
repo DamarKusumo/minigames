@@ -108,9 +108,9 @@ export function createGame(level) {
   return state;
 }
 
-// grid cell size from viewport: 18px floor (mobile), 34px cap (desktop)
-export function cellSizeFor(innerWidth, cols) {
-  return Math.max(18, Math.min(34, Math.floor((Math.min(innerWidth, 900) - 48) / cols)));
+// cell size that fits the available playfield on both axes: 14px floor, 34px cap
+export function cellSizeFor(availW, availH, cols, rows) {
+  return Math.max(14, Math.min(34, Math.floor(Math.min(availW / cols, availH / rows))));
 }
 
 // touch swipe → direction; dominant axis wins, tiny swipes ignored
@@ -196,9 +196,6 @@ export default {
     }
     root.append(hud, pauseBtn, grid, dpad, overlay);
 
-    const cellSize = cellSizeFor(window.innerWidth, state.cols);
-    grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
-    grid.style.gridTemplateRows = `repeat(${state.rows}, ${cellSize}px)`;
     const cells = [];
     for (let i = 0; i < state.cols * state.rows; i++) {
       const c = document.createElement('div');
@@ -206,6 +203,19 @@ export default {
       grid.appendChild(c);
       cells.push(c);
     }
+
+    // size the board to exactly the space left after hud/buttons — no page scroll
+    function fitGrid() {
+      const chrome = hud.offsetHeight + pauseBtn.offsetHeight + dpad.offsetHeight + 32;
+      const availH = Math.max(60, window.innerHeight - root.getBoundingClientRect().top - chrome);
+      const availW = root.clientWidth;
+      // -16 for grid gaps + border, which cellSizeFor's rows math doesn't count
+      const cell = cellSizeFor(availW, availH - 16, state.cols, state.rows);
+      grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cell}px)`;
+      grid.style.gridTemplateRows = `repeat(${state.rows}, ${cell}px)`;
+    }
+    fitGrid();
+    window.addEventListener('resize', fitGrid);
 
     function draw() {
       hud.textContent = `Score ${state.score} / ${level.target}`;
@@ -309,6 +319,7 @@ export default {
     return () => {
       clearInterval(timer);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', fitGrid);
       grid.removeEventListener('touchstart', onTouchStart);
       grid.removeEventListener('touchend', onTouchEnd);
     };

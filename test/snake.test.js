@@ -77,12 +77,13 @@ test('vault: food never spawns outside the box when the snake starts inside', ()
   }
 });
 
-test('cellSizeFor fits the viewport on phones and grows on desktop', () => {
-  const cols = 16;
-  const phone = cellSizeFor(320, cols);
-  assert.ok(phone * cols + cols <= 320 + 32, `phone grid ${phone * cols}px must fit 320px screen`);
-  assert.equal(cellSizeFor(1440, cols), 34); // capped so desktop isn't absurd
-  assert.ok(cellSizeFor(400, cols) >= 18); // never smaller than the mobile floor
+test('cellSizeFor fits the available playfield on both axes', () => {
+  const s1 = cellSizeFor(1440, 1000, 16, 12);
+  assert.equal(s1, 34); // growth capped
+  const s2 = cellSizeFor(300, 200, 16, 12);
+  assert.ok(s2 * 16 <= 300, 'fits width');
+  assert.ok(s2 * 12 <= 200, 'fits height');
+  assert.equal(cellSizeFor(60, 30, 16, 12), 14); // never unplayable small
 });
 
 test('setDir rejects a 180° reverse into the neck', () => {

@@ -27,6 +27,7 @@
       step('menu->levels', !!document.querySelector('.level-list') && btns().length === 6);
       btns()[0].click();
       step('levels->game', !!document.querySelector('.game') && !!document.querySelector('.snake-grid'));
+      step('snake view fits viewport', document.documentElement.scrollHeight <= window.innerHeight + 2);
       step('snake arrow buttons', document.querySelectorAll('.dpad .dpad-btn').length === 4);
 
       // pause freezes the snake; continue resumes
@@ -84,6 +85,7 @@
       // bounce gameplay: enter, tick a few frames, still alive
       btns()[0].click();
       step('bounce game renders', !!document.querySelector('canvas'));
+      step('bounce view fits viewport', document.documentElement.scrollHeight <= window.innerHeight + 2);
       step('bounce arrow buttons', document.querySelectorAll('.dpad-2 .dpad-btn').length === 2);
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
       await sleep(120);

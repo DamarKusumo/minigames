@@ -58,6 +58,11 @@ export function createGame(level) {
   };
 }
 
+// scale that keeps the whole board inside availW x availH, up to 1.75x on desktop
+export function fitScale(availW, availH) {
+  return Math.min(availW / W, availH / H, 1.75);
+}
+
 export function setPaddleX(state, x) {
   const half = state.paddle.w / 2;
   state.paddle.x = Math.min(Math.max(x, half), W - half);
@@ -183,6 +188,17 @@ export default {
     root.append(hud, pauseBtn, canvas, dpad, overlay);
     const ctx = canvas.getContext('2d');
 
+    // size the canvas to exactly the space left after hud/buttons — no page scroll
+    function fit() {
+      const chrome = hud.offsetHeight + pauseBtn.offsetHeight + dpad.offsetHeight + 32;
+      const availH = Math.max(80, window.innerHeight - root.getBoundingClientRect().top - chrome);
+      const s = fitScale(root.clientWidth, availH);
+      canvas.style.width = `${Math.floor(W * s)}px`;
+      canvas.style.height = `${Math.floor(H * s)}px`;
+    }
+    fit();
+    window.addEventListener('resize', fit);
+
     function draw() {
       hud.textContent = `Score ${state.score} — Lives ${state.lives}`;
       ctx.fillStyle = '#0a0a12';
@@ -294,6 +310,7 @@ export default {
       clearInterval(timer);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('resize', fit);
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove', onTouchMove);
     };

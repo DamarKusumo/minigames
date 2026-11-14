@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, movePaddle, setPaddleX, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
+import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
 
 const singleBrick = { id: 99, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['1...............'] };
 const singleTwo = { id: 98, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['2...............'] };
@@ -57,6 +57,14 @@ test('paddle clamps at both edges', () => {
   const right = g.paddle.x;
   assert.equal(right, W - PADDLE_W / 2);
   assert.ok(left < right);
+});
+
+test('fitScale keeps the whole board inside the available space', () => {
+  assert.ok(fitScale(W, H) <= 1.0001); // exactly fits, no more
+  const s = fitScale(200, 500);
+  assert.ok(W * s <= 200 + 0.5, 'width fits');
+  assert.ok(H * s <= 500 + 0.5, 'height fits');
+  assert.equal(fitScale(4000, 4000), 1.75); // desktop growth cap
 });
 
 test('setPaddleX clamps to field edges (touch drag)', () => {
