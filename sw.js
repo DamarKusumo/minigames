@@ -10,6 +10,7 @@ const SHELL = [
   'games/sudoku.js',
   'games/bounce.js',
   'games/2048.js',
+  'games/tetris.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',

@@ -161,9 +161,224 @@ export function step(state) {
 export default {
   id: 'tetris',
   name: 'Tetris',
+  icon: '🟦',
+  blurb: 'Stack tetrominoes, clear lines',
   freeChoice: true,
   levels: [{ id: 1, label: 'Marathon' }],
-  mount() {
-    throw new Error('tetris mount not implemented yet (Task 4)');
+  mount(root, options) {
+    let state = createGame();
+    let paused = false;
+    let lastScore = 0;
+
+    const pauseBtn = document.createElement('button');
+    pauseBtn.type = 'button';
+    pauseBtn.className = 'btn';
+    pauseBtn.textContent = '⏸ Pause';
+    function togglePause() {
+      if (!overlay.hidden) return; // result screen owns the pause state
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
+    }
+    pauseBtn.addEventListener('click', togglePause);
+
+    const top = document.createElement('div');
+    top.className = 'tetris-top';
+    const hud = document.createElement('div');
+    hud.className = 'hud';
+    const nextWrap = document.createElement('div');
+    nextWrap.className = 'tetris-next-wrap';
+    nextWrap.appendChild(Object.assign(document.createElement('span'), { textContent: 'Next' }));
+    const next = document.createElement('div');
+    next.className = 'tetris-next';
+    const nextCells = [];
+    for (let i = 0; i < 16; i++) {
+      const c = document.createElement('div');
+      c.className = 'tetris-cell';
+      next.appendChild(c);
+      nextCells.push(c);
+    }
+    nextWrap.appendChild(next);
+    top.append(hud, nextWrap);
+
+    const grid = document.createElement('div');
+    grid.className = 'tetris-grid';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.hidden = true;
+
+    const controls = document.createElement('div');
+    controls.className = 'tetris-controls';
+    for (const [label, fn] of [
+      ['←', () => move(state, -1)],
+      ['→', () => move(state, 1)],
+      ['↻', () => rotate(state)],
+      ['⤓', () => hardDrop(state)],
+    ]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn';
+      b.textContent = label;
+      b.addEventListener('click', () => act(fn));
+      controls.appendChild(b);
+    }
+
+    root.append(pauseBtn, top, grid, controls, overlay);
+
+    const cells = [];
+    for (let i = 0; i < ROWS * COLS; i++) {
+      const c = document.createElement('div');
+      c.className = 'tetris-cell';
+      grid.appendChild(c);
+      cells.push(c);
+    }
+
+    // 800ms start, -50ms per 10 lines, 100ms floor
+    const gravityMs = () => Math.max(100, 800 - 50 * Math.floor(state.lines / 10));
+    let intervalMs = gravityMs();
+    let timer = null;
+    function restartTimer() {
+      clearInterval(timer);
+      timer = setInterval(tick, intervalMs);
+    }
+
+    // size the board to exactly the space left after hud/buttons — no page scroll
+    function fitGrid() {
+      const chrome = top.offsetHeight + pauseBtn.offsetHeight + controls.offsetHeight
+        + parseFloat(getComputedStyle(controls).marginTop)
+        + parseFloat(getComputedStyle(root.parentElement).paddingBottom)
+        + 32;
+      const availH = Math.max(60, window.innerHeight - root.getBoundingClientRect().top - chrome);
+      // snake's cellSizeFor equivalent: 14px floor, 34px cap
+      const cell = Math.max(14, Math.min(34, Math.floor(Math.min(root.clientWidth / COLS, (availH - 16) / ROWS))));
+      grid.style.gridTemplateColumns = `repeat(${COLS}, ${cell}px)`;
+      grid.style.gridTemplateRows = `repeat(${ROWS}, ${cell}px)`;
+      const n = Math.max(8, Math.floor(cell / 2));
+      next.style.gridTemplateColumns = `repeat(4, ${n}px)`;
+      next.style.gridTemplateRows = `repeat(4, ${n}px)`;
+    }
+    window.addEventListener('resize', fitGrid);
+
+    function draw() {
+      hud.textContent = `Score ${state.score} · Lines ${state.lines}`;
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const v = state.grid[y][x];
+          cells[y * COLS + x].className = 'tetris-cell' + (v ? ` t${v}` : '');
+        }
+      }
+      if (state.piece) {
+        const id = TYPES.indexOf(state.piece.type) + 1;
+        for (const c of SHAPES[state.piece.type][state.piece.rot]) {
+          const y = state.piece.y + c.y;
+          if (y >= 0) cells[y * COLS + (state.piece.x + c.x)].className = `tetris-cell t${id}`;
+        }
+      }
+      const nid = TYPES.indexOf(state.next) + 1;
+      for (const c of nextCells) c.className = 'tetris-cell';
+      for (const c of SHAPES[state.next][0]) nextCells[c.y * 4 + c.x].className = `tetris-cell t${nid}`;
+    }
+
+    function showOverlay(title, buttons) {
+      overlay.innerHTML = '';
+      overlay.hidden = false;
+      const h = document.createElement('h2');
+      h.textContent = title;
+      overlay.appendChild(h);
+      for (const [label, fn] of buttons) {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.textContent = label;
+        btn.addEventListener('click', fn);
+        overlay.appendChild(btn);
+      }
+    }
+
+    function gameOver() {
+      showOverlay('Game Over', [
+        ['Restart', restart],
+        ['Choose Level', () => options.onExit()],
+      ]);
+    }
+
+    function restart() {
+      state = createGame();
+      lastScore = 0;
+      paused = false;
+      pauseBtn.textContent = '⏸ Pause';
+      overlay.hidden = true;
+      intervalMs = gravityMs();
+      restartTimer();
+      draw();
+      fitGrid();
+    }
+
+    function announce() {
+      if (state.score > lastScore) {
+        lastScore = state.score;
+        options.onScore(state.score);
+      }
+    }
+
+    function afterAction() {
+      announce();
+      if (state.dead) gameOver();
+      else if (gravityMs() !== intervalMs) {
+        intervalMs = gravityMs();
+        restartTimer();
+      }
+      draw();
+    }
+
+    function act(fn) {
+      if (paused || !overlay.hidden) return;
+      fn();
+      afterAction();
+    }
+
+    function tick() {
+      if (paused || state.dead) return;
+      step(state);
+      afterAction();
+    }
+
+    function onKey(e) {
+      if (!overlay.hidden) return; // result screen owns input
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        togglePause();
+        return;
+      }
+      if (e.key === ' ') {
+        if (document.activeElement instanceof HTMLButtonElement) return;
+        e.preventDefault();
+        act(() => hardDrop(state)); // space = hard drop; pause is button + p/P
+        return;
+      }
+      if (paused || state.dead) return;
+      const dx = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+      if (dx !== undefined) {
+        e.preventDefault();
+        act(() => move(state, dx));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        act(() => step(state));
+      } else if (e.key === 'ArrowUp' || e.key === 'x' || e.key === 'X') {
+        e.preventDefault();
+        act(() => rotate(state));
+      }
+    }
+
+    window.addEventListener('keydown', onKey);
+    restartTimer();
+    draw();
+    fitGrid(); // after draw so the hud has its real height
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', fitGrid);
+      // control-button listeners die with the DOM nodes root.clear() removes
+    };
   },
 };
