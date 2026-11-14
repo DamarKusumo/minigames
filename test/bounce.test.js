@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
+import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, fallBricks, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
 
 const singleBrick = { id: 99, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['1...............'] };
 const singleTwo = { id: 98, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['2...............'] };
@@ -84,4 +84,34 @@ test('ball below bottom with 0 lives left is dead', () => {
   step(g);
   assert.equal(g.dead, true);
   assert.equal(g.lives, 0);
+});
+
+test('levels 1-2 never fall, 3-6 fall with faster intervals', () => {
+  assert.deepEqual(LEVELS.map((l) => l.fallMs), [0, 0, 5000, 4000, 3000, 2200]);
+});
+
+test('fallBricks shifts the formation down one row', () => {
+  const g = createGame(singleBrick);
+  fallBricks(g);
+  assert.equal(g.bricks[0].every((v) => v === 0), true);
+  assert.equal(g.bricks[1][0], 1);
+  assert.equal(g.dead, false);
+});
+
+test('fall is a no-op once cleared', () => {
+  const g = createGame(singleBrick);
+  g.cleared = true;
+  const before = JSON.stringify(g.bricks);
+  fallBricks(g);
+  assert.equal(JSON.stringify(g.bricks), before);
+  assert.equal(g.dead, false);
+});
+
+test('live brick shifting past paddle row sets dead with bricks reason', () => {
+  const g = createGame(singleBrick);
+  g.bricks = Array.from({ length: 19 }, () => Array(16).fill(0));
+  g.bricks.push(Array.from({ length: 16 }, (_, i) => (i === 0 ? 1 : 0)));
+  fallBricks(g);
+  assert.equal(g.dead, true);
+  assert.equal(g.deadReason, 'bricks');
 });

@@ -7,36 +7,36 @@ export const PADDLE_H = 10;
 export const PADDLE_Y = 380;
 
 export const LEVELS = [
-  { id: 1, label: 'Level 1 — Warm-up', ballSpeed: 2, paddleSpeed: 5, bricks: [
+  { id: 1, label: 'Level 1 — Warm-up', ballSpeed: 2, paddleSpeed: 5, fallMs: 0, bricks: [
     '1111111111111111',
     '1111111111111111',
     '1111111111111111',
   ] },
-  { id: 2, label: 'Level 2 — Double thick', ballSpeed: 2, paddleSpeed: 5, bricks: [
+  { id: 2, label: 'Level 2 — Double thick', ballSpeed: 2, paddleSpeed: 5, fallMs: 0, bricks: [
     '2222222222222222',
     '1111111111111111',
     '1111111111111111',
   ] },
-  { id: 3, label: 'Level 3 — Pyramid', ballSpeed: 2.5, paddleSpeed: 5, bricks: [
+  { id: 3, label: 'Level 3 — Pyramid', ballSpeed: 2.5, paddleSpeed: 5, fallMs: 5000, bricks: [
     '....11111111....',
     '...1111111111...',
     '..111111111111..',
     '.11111111111111.',
   ] },
-  { id: 4, label: 'Level 4 — Checkers', ballSpeed: 3, paddleSpeed: 6, bricks: [
+  { id: 4, label: 'Level 4 — Checkers', ballSpeed: 3, paddleSpeed: 6, fallMs: 4000, bricks: [
     '1.2.1.2.1.2.1.2.',
     '.1.2.1.2.1.2.1.2',
     '1.2.1.2.1.2.1.2.',
     '.1.2.1.2.1.2.1.2',
   ] },
-  { id: 5, label: 'Level 5 — The Vault', ballSpeed: 3, paddleSpeed: 6, bricks: [
+  { id: 5, label: 'Level 5 — The Vault', ballSpeed: 3, paddleSpeed: 6, fallMs: 3000, bricks: [
     '2222222222222222',
     '2..............2',
     '2.111111111111.2',
     '2..............2',
     '2222222222222222',
   ] },
-  { id: 6, label: 'Level 6 — Overload', ballSpeed: 4, paddleSpeed: 6, bricks: [
+  { id: 6, label: 'Level 6 — Overload', ballSpeed: 4, paddleSpeed: 6, fallMs: 2200, bricks: [
     '2222222222222222',
     '2222222222222222',
     '1111111111111111',
@@ -55,7 +55,23 @@ export function createGame(level) {
     lives: 3,
     cleared: false,
     dead: false,
+    deadReason: null,
   };
+}
+
+// shift the whole formation down one row; bricks reaching the paddle line kill the run
+export function fallBricks(state) {
+  if (state.dead || state.cleared) return;
+  const cols = state.bricks[0].length;
+  state.bricks.unshift(Array(cols).fill(0));
+  const breachRow = Math.floor(PADDLE_Y / CELL);
+  for (let r = 0; r < state.bricks.length; r++) {
+    if (r >= breachRow && state.bricks[r].some((v) => v > 0)) {
+      state.dead = true;
+      state.deadReason = 'bricks';
+      return;
+    }
+  }
 }
 
 // scale that keeps the whole board inside availW x availH, up to 1.75x on desktop
