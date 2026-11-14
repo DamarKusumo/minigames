@@ -149,8 +149,17 @@ export default {
     let lastScore = 0;
     let dir = 0;
 
+    let paused = false;
     const hud = document.createElement('div');
     hud.className = 'hud';
+    const pauseBtn = document.createElement('button');
+    pauseBtn.type = 'button';
+    pauseBtn.className = 'btn';
+    pauseBtn.textContent = '⏸ Pause';
+    pauseBtn.addEventListener('click', () => {
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
+    });
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
@@ -171,7 +180,7 @@ export default {
       b.addEventListener('pointercancel', () => { dir = 0; });
       dpad.appendChild(b);
     }
-    root.append(hud, canvas, dpad, overlay);
+    root.append(hud, pauseBtn, canvas, dpad, overlay);
     const ctx = canvas.getContext('2d');
 
     function draw() {
@@ -221,7 +230,7 @@ export default {
     }
 
     function tick() {
-      if (state.dead || state.cleared) return;
+      if (paused || state.dead || state.cleared) return;
       if (dir !== 0) movePaddle(state, dir);
       step(state);
       if (state.dead) {

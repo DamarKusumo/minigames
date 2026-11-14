@@ -148,8 +148,17 @@ export default {
     let seconds = 0;
     let won = false;
 
+    let paused = false;
     const hud = document.createElement('div');
     hud.className = 'hud';
+    const pauseBtn = document.createElement('button');
+    pauseBtn.type = 'button';
+    pauseBtn.className = 'btn';
+    pauseBtn.textContent = '⏸ Pause';
+    pauseBtn.addEventListener('click', () => {
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
+    });
     const grid = document.createElement('div');
     grid.className = 'sudoku-grid';
     const pad = document.createElement('div');
@@ -157,7 +166,7 @@ export default {
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.hidden = true;
-    root.append(hud, grid, pad, overlay);
+    root.append(hud, pauseBtn, grid, pad, overlay);
 
     const cells = [];
     for (let i = 0; i < 81; i++) {
@@ -202,7 +211,7 @@ export default {
     }
 
     function setValue(v) {
-      if (selected === null || won || givens.has(selected)) return; // printed clues are immutable
+      if (selected === null || won || paused || givens.has(selected)) return; // printed clues are immutable
       puzzle[selected] = v;
       if (isCompleteAndValid()) {
         won = true;
@@ -268,7 +277,7 @@ export default {
     }
     window.addEventListener('keydown', onKey);
     const timer = setInterval(() => {
-      if (!won) {
+      if (!won && !paused) {
         seconds += 1;
         draw();
       }

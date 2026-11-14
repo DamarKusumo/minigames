@@ -29,6 +29,16 @@
       step('levels->game', !!document.querySelector('.game') && !!document.querySelector('.snake-grid'));
       step('snake arrow buttons', document.querySelectorAll('.dpad .dpad-btn').length === 4);
 
+      // pause freezes the snake; continue resumes
+      const sPause = [...document.querySelectorAll('#app button')].find((b) => b.textContent.includes('Pause'));
+      step('snake has pause button', !!sPause);
+      if (sPause) {
+        sPause.click();
+        await sleep(2500); // unpaused, it would have hit a wall by now
+        step('pause stops snake', document.querySelector('.overlay').hidden === true);
+        [...document.querySelectorAll('#app button')].find((b) => b.textContent.includes('Continue')).click();
+      }
+
       // steer into the top wall: should die and show Game Over
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
       await sleep(2500); // ~12 ticks x 200ms reaches the wall from mid-grid
@@ -95,6 +105,13 @@
       btns()[0].click();
       const scells = () => [...document.querySelectorAll('.sudoku-cell')];
       step('sudoku grid is 81 cells', scells().length === 81);
+      // pause freezes the timer
+      const uPause = [...document.querySelectorAll('#app button')].find((b) => b.textContent.includes('Pause'));
+      const hudBefore = document.querySelector('.hud').textContent;
+      uPause.click();
+      await sleep(1500);
+      step('sudoku pause freezes timer', document.querySelector('.hud').textContent === hudBefore);
+      [...document.querySelectorAll('#app button')].find((b) => b.textContent.includes('Continue')).click();
       const grid = scells().map((c) => (c.textContent === '' ? null : Number(c.textContent)));
       const solved = solve(grid);
       step('sudoku solver fills grid', !!solved);

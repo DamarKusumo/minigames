@@ -168,8 +168,17 @@ export default {
     let state = createGame(level);
     let announcedClear = false;
 
+    let paused = false;
     const hud = document.createElement('div');
     hud.className = 'hud';
+    const pauseBtn = document.createElement('button');
+    pauseBtn.type = 'button';
+    pauseBtn.className = 'btn';
+    pauseBtn.textContent = '⏸ Pause';
+    pauseBtn.addEventListener('click', () => {
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Continue' : '⏸ Pause';
+    });
     const grid = document.createElement('div');
     grid.className = 'snake-grid';
     const overlay = document.createElement('div');
@@ -185,7 +194,7 @@ export default {
       b.addEventListener('click', () => setDir(state, d));
       dpad.appendChild(b);
     }
-    root.append(hud, grid, dpad, overlay);
+    root.append(hud, pauseBtn, grid, dpad, overlay);
 
     const cellSize = cellSizeFor(window.innerWidth, state.cols);
     grid.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
@@ -238,7 +247,7 @@ export default {
 
     let lastScore = 0;
     function tick() {
-      if (state.dead || state.cleared) return;
+      if (paused || state.dead || state.cleared) return;
       step(state);
       if (state.dead) {
         showOverlay('Game Over', [
