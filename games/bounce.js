@@ -49,7 +49,7 @@ export function createGame(level) {
   return {
     level,
     bricks: level.bricks.map((row) => [...row].map((ch) => (ch === '.' ? 0 : Number(ch)))),
-    ball: { x: W / 2, y: H - 60, dx: level.ballSpeed, dy: -level.ballSpeed },
+    balls: [{ x: W / 2, y: H - 60, dx: level.ballSpeed, dy: -level.ballSpeed }],
     paddle: { x: W / 2, w: PADDLE_W },
     score: 0,
     lives: 3,
@@ -90,66 +90,82 @@ export function movePaddle(state, dir) {
 }
 
 function resetBall(state) {
-  state.ball = {
+  state.balls = [{
     x: state.paddle.x,
     y: PADDLE_Y - 20,
     dx: state.level.ballSpeed,
     dy: -state.level.ballSpeed,
-  };
+  }];
 }
 
-function hitBrick(state) {
-  const col = Math.floor(state.ball.x / CELL);
-  const row = Math.floor(state.ball.y / CELL);
+// one ball → three (negated dx and straight up); no-op when already split
+export function splitBalls(state) {
+  if (state.balls.length !== 1) return;
+  const b = state.balls[0];
+  state.balls.push({ ...b, dx: -b.dx }, { ...b, dx: 0 });
+}
+
+function hitBrick(state, b) {
+  const col = Math.floor(b.x / CELL);
+  const row = Math.floor(b.y / CELL);
   if (row < 0 || row >= state.bricks.length || col < 0 || col >= state.bricks[row].length) return false;
   const v = state.bricks[row][col];
   if (v <= 0) return false;
   state.bricks[row][col] = v - 1;
   state.score += 1;
-  state.ball.dy = -state.ball.dy;
+  b.dy = -b.dy;
   if (!state.bricks.some((r) => r.some((c) => c > 0))) state.cleared = true;
   return true;
 }
 
 export function step(state) {
   if (state.dead || state.cleared) return state;
-  const b = state.ball;
-  b.x += b.dx;
-  b.y += b.dy;
+  const keep = [];
+  for (const b of state.balls) {
+    b.x += b.dx;
+    b.y += b.dy;
 
-  if (b.x < BALL_R) {
-    b.x = BALL_R;
-    b.dx = Math.abs(b.dx);
-  } else if (b.x > W - BALL_R) {
-    b.x = W - BALL_R;
-    b.dx = -Math.abs(b.dx);
+    if (b.x < BALL_R) {
+      b.x = BALL_R;
+      b.dx = Math.abs(b.dx);
+    } else if (b.x > W - BALL_R) {
+      b.x = W - BALL_R;
+      b.dx = -Math.abs(b.dx);
+    }
+    if (b.y < BALL_R) {
+      b.y = BALL_R;
+      b.dy = Math.abs(b.dy);
+    }
+
+    // brick region sits at the top of the field
+    if (b.y < state.bricks.length * CELL && hitBrick(state, b)) {
+      keep.push(b);
+      continue;
+    }
+
+    if (
+      b.dy > 0 &&
+      b.y >= PADDLE_Y && b.y <= PADDLE_Y + PADDLE_H &&
+      b.x >= state.paddle.x - state.paddle.w / 2 - BALL_R &&
+      b.x <= state.paddle.x + state.paddle.w / 2 + BALL_R
+    ) {
+      b.y = PADDLE_Y;
+      b.dy = -Math.abs(b.dy);
+      // steer by where the ball lands on the paddle
+      const offset = (b.x - state.paddle.x) / (state.paddle.w / 2);
+      b.dx = offset * state.level.ballSpeed;
+    }
+
+    if (b.y - BALL_R > H) continue; // ball lost
+    keep.push(b);
   }
-  if (b.y < BALL_R) {
-    b.y = BALL_R;
-    b.dy = Math.abs(b.dy);
-  }
-
-  // brick region sits at the top of the field
-  if (b.y < state.bricks.length * CELL && hitBrick(state)) return state;
-
-  if (
-    b.dy > 0 &&
-    b.y >= PADDLE_Y && b.y <= PADDLE_Y + PADDLE_H &&
-    b.x >= state.paddle.x - state.paddle.w / 2 - BALL_R &&
-    b.x <= state.paddle.x + state.paddle.w / 2 + BALL_R
-  ) {
-    b.y = PADDLE_Y;
-    b.dy = -Math.abs(b.dy);
-    // steer by where the ball lands on the paddle
-    const offset = (b.x - state.paddle.x) / (state.paddle.w / 2);
-    b.dx = offset * state.level.ballSpeed;
-  }
-
-  if (b.y - BALL_R > H) {
+  state.balls = keep;
+  if (state.balls.length === 0) {
     state.lives -= 1;
     if (state.lives <= 0) {
       state.lives = 0;
       state.dead = true;
+      state.deadReason = 'balls';
     } else {
       resetBall(state);
     }
@@ -236,9 +252,11 @@ export default {
       ctx.fillStyle = '#d8d8e8';
       ctx.fillRect(state.paddle.x - state.paddle.w / 2, PADDLE_Y, state.paddle.w, PADDLE_H);
       ctx.fillStyle = '#ff5566';
-      ctx.beginPath();
-      ctx.arc(state.ball.x, state.ball.y, BALL_R, 0, Math.PI * 2);
-      ctx.fill();
+      for (const b of state.balls) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     function showOverlay(title, buttons) {
@@ -270,7 +288,7 @@ export default {
       if (dir !== 0) movePaddle(state, dir);
       step(state);
       if (state.dead) {
-        showOverlay('Game Over', [
+        showOverlay(state.deadReason === 'bricks' ? 'Bricks reached the bottom' : 'Game Over', [
           ['Restart', restart],
           ['Choose Level', () => options.onExit()],
         ]);

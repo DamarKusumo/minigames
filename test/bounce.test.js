@@ -1,27 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, fallBricks, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
+import { LEVELS, createGame, step, movePaddle, setPaddleX, fitScale, fallBricks, splitBalls, W, H, PADDLE_W, PADDLE_Y } from '../games/bounce.js';
 
 const singleBrick = { id: 99, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['1...............'] };
 const singleTwo = { id: 98, label: 'test', ballSpeed: 2, paddleSpeed: 5, bricks: ['2...............'] };
 
 test('ball bouncing off top wall reverses dy', () => {
   const g = createGame(singleBrick);
-  g.ball = { x: 160, y: 2, dx: 0, dy: -2 };
+  g.balls = [{ x: 160, y: 2, dx: 0, dy: -2 }];
   step(g);
-  assert.ok(g.ball.dy > 0, `dy should be upward, got ${g.ball.dy}`);
+  assert.ok(g.balls[0].dy > 0, `dy should be upward, got ${g.balls[0].dy}`);
 });
 
 test('paddle hit sends the ball upward, not downward', () => {
   const g = createGame(singleBrick);
-  g.ball = { x: g.paddle.x, y: PADDLE_Y + 1, dx: 0, dy: 2 };
+  g.balls = [{ x: g.paddle.x, y: PADDLE_Y + 1, dx: 0, dy: 2 }];
   step(g);
-  assert.ok(g.ball.dy < 0, `dy should be negative, got ${g.ball.dy}`);
+  assert.ok(g.balls[0].dy < 0, `dy should be negative, got ${g.balls[0].dy}`);
 });
 
 test('1-hit brick is removed and score increments', () => {
   const g = createGame(singleBrick);
-  g.ball = { x: 10, y: 10, dx: 0, dy: 2 };
+  g.balls = [{ x: 10, y: 10, dx: 0, dy: 2 }];
   step(g);
   assert.equal(g.bricks[0][0], 0);
   assert.equal(g.score, 1);
@@ -29,7 +29,7 @@ test('1-hit brick is removed and score increments', () => {
 
 test('2-hit brick decrements to 1 and score increments', () => {
   const g = createGame(singleTwo);
-  g.ball = { x: 10, y: 10, dx: 0, dy: 2 };
+  g.balls = [{ x: 10, y: 10, dx: 0, dy: 2 }];
   step(g);
   assert.equal(g.bricks[0][0], 1);
   assert.equal(g.score, 1);
@@ -38,7 +38,7 @@ test('2-hit brick decrements to 1 and score increments', () => {
 
 test('last brick removed sets cleared once, later steps leave state untouched', () => {
   const g = createGame(singleBrick);
-  g.ball = { x: 10, y: 10, dx: 0, dy: 2 };
+  g.balls = [{ x: 10, y: 10, dx: 0, dy: 2 }];
   step(g);
   assert.equal(g.cleared, true);
   assert.equal(g.dead, false);
@@ -80,7 +80,7 @@ test('setPaddleX clamps to field edges (touch drag)', () => {
 test('ball below bottom with 0 lives left is dead', () => {
   const g = createGame(singleBrick);
   g.lives = 1;
-  g.ball = { x: 160, y: H + 10, dx: 0, dy: 2 };
+  g.balls = [{ x: 160, y: H + 10, dx: 0, dy: 2 }];
   step(g);
   assert.equal(g.dead, true);
   assert.equal(g.lives, 0);
@@ -114,4 +114,46 @@ test('live brick shifting past paddle row sets dead with bricks reason', () => {
   fallBricks(g);
   assert.equal(g.dead, true);
   assert.equal(g.deadReason, 'bricks');
+});
+
+test('splitBalls turns one ball into three', () => {
+  const g = createGame(singleBrick);
+  splitBalls(g);
+  assert.equal(g.balls.length, 3);
+  splitBalls(g);
+  assert.equal(g.balls.length, 3);
+});
+
+test('losing one of three balls costs no life', () => {
+  const g = createGame(singleBrick);
+  g.lives = 3;
+  g.balls = [
+    { x: 10, y: H + 10, dx: 0, dy: 2 },
+    { x: 160, y: 100, dx: 2, dy: -2 },
+    { x: 200, y: 100, dx: -2, dy: -2 },
+  ];
+  step(g);
+  assert.equal(g.balls.length, 2);
+  assert.equal(g.lives, 3);
+  assert.equal(g.dead, false);
+});
+
+test('losing all balls costs a life and respawns', () => {
+  const g = createGame(singleBrick);
+  g.lives = 2;
+  g.balls = [{ x: 160, y: H + 10, dx: 0, dy: 2 }];
+  step(g);
+  assert.equal(g.lives, 1);
+  assert.equal(g.dead, false);
+  assert.equal(g.balls.length, 1);
+});
+
+test('last life lost with all balls gone is dead', () => {
+  const g = createGame(singleBrick);
+  g.lives = 1;
+  g.balls = [{ x: 160, y: H + 10, dx: 0, dy: 2 }];
+  step(g);
+  assert.equal(g.dead, true);
+  assert.equal(g.deadReason, 'balls');
+  assert.equal(g.lives, 0);
 });
