@@ -1,9 +1,10 @@
 import snake from '../games/snake.js';
 import sudoku from '../games/sudoku.js';
 import bounce from '../games/bounce.js';
+import g2048 from '../games/2048.js';
 import { getHighScore, setHighScore, getUnlockedLevel, setUnlockedLevel } from './storage.js';
 
-export const games = [snake, sudoku, bounce];
+export const games = [snake, sudoku, bounce, g2048];
 
 let root;
 let cleanup = null;

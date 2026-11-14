@@ -204,3 +204,36 @@ body:has(> #app > .game) { overflow: hidden; }
   gap: 16px;
   z-index: 10;
 }
+
+/* 2048 — grid size set inline by fit() */
+.g2048-grid {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  background: var(--panel);
+  border: 2px solid var(--neon-dim);
+  width: max-content;
+  touch-action: none; /* swipes move tiles, not the page */
+}
+
+.g2048-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  background: #101024;
+  color: var(--text);
+  border-radius: 4px;
+}
+
+.v2    { background: #eee4da; color: #3a3a3a; }
+.v4    { background: #ede0c8; color: #3a3a3a; }
+.v8    { background: #f2b179; color: #3a2a1a; }
+.v16   { background: #f59563; color: #fff; }
+.v32   { background: #f67c5f; color: #fff; }
+.v64   { background: #f65e3b; color: #fff; }
+.v128  { background: #edcf72; color: #3a3a3a; }
+.v256  { background: #edcc61; color: #3a3a3a; }
+.v512  { background: #edc850; color: #3a3a3a; }
+.v1024 { background: #edc53f; color: #3a3a3a; }
+.v2048, .v-high { background: var(--neon); color: var(--bg); }

@@ -1,6 +1,6 @@
 # Retro Minigames
 
-Nostalgic solo minigames in the browser: Snake, Sudoku, Bounce. No backend, no build step — plain HTML/CSS/ES modules.
+Nostalgic solo minigames in the browser: Snake, Sudoku, Bounce, 2048. No backend, no build step — plain HTML/CSS/ES modules.
 
 ## Run locally
 

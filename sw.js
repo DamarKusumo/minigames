@@ -9,6 +9,7 @@ const SHELL = [
   'games/snake.js',
   'games/sudoku.js',
   'games/bounce.js',
+  'games/2048.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
