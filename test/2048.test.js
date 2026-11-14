@@ -12,7 +12,7 @@ test('slide left merges a pair once', () => {
   assert.equal(changed, true);
   assert.equal(g.board[0], 4);
   assert.equal(g.board[1], 4); // 4+4 must NOT merge again
-  assert.equal(g.score, 2);
+  assert.equal(g.score, 4); // 2+2 merge scores merged value 4 (spec)
 });
 
 test('two pairs in one row do not chain-merge', () => {

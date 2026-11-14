@@ -32,7 +32,7 @@ function mergeLine(values) {
   for (let i = 0; i < nonzero.length; i++) {
     if (nonzero[i] === nonzero[i + 1]) {
       out.push(nonzero[i] * 2);
-      gained += nonzero[i]; // brief test: 2+2 → score +2 (not standard 2048's +4)
+      gained += nonzero[i] * 2; // score += merged tile value (spec: design.md:85)
       i++;
     } else {
       out.push(nonzero[i]);
