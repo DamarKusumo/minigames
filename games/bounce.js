@@ -234,6 +234,7 @@ export default {
     let dir = 0;
 
     let paused = false;
+    let fallAcc = 0;
     const hud = document.createElement('div');
     hud.className = 'hud';
     const pauseBtn = document.createElement('button');
@@ -296,6 +297,17 @@ export default {
           }
         }
       }
+      const dropStyle = { wide: ['#39ff88', 'W'], multi: ['#ffd23f', 'M'], slow: ['#55aaff', 'S'], extra: ['#ff5566', '♥'] };
+      for (const d of state.drops) {
+        const [color, glyph] = dropStyle[d.type];
+        ctx.fillStyle = color;
+        ctx.fillRect(d.x - 8, d.y - 8, 16, 16);
+        ctx.fillStyle = '#0a0a12';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(glyph, d.x, d.y);
+      }
       ctx.fillStyle = '#d8d8e8';
       ctx.fillRect(state.paddle.x - state.paddle.w / 2, PADDLE_Y, state.paddle.w, PADDLE_H);
       ctx.fillStyle = '#ff5566';
@@ -326,6 +338,7 @@ export default {
       state = createGame(level);
       announcedClear = false;
       lastScore = 0;
+      fallAcc = 0;
       overlay.hidden = true;
       draw();
     }
@@ -334,6 +347,12 @@ export default {
       if (paused || state.dead || state.cleared) return;
       if (dir !== 0) movePaddle(state, dir);
       step(state);
+      fallDrops(state);
+      fallAcc += 16;
+      if (level.fallMs > 0 && fallAcc >= level.fallMs) {
+        fallAcc = 0;
+        fallBricks(state);
+      }
       if (state.dead) {
         showOverlay(state.deadReason === 'bricks' ? 'Bricks reached the bottom' : 'Game Over', [
           ['Restart', restart],
