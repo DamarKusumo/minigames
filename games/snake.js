@@ -62,14 +62,31 @@ function startSnake(cols, rows, walls) {
   return [{ x: x + 2, y }, { x: x + 1, y }, { x, y }];
 }
 
-function placeFood(state) {
-  const onSnake = new Set(state.snake.map((c) => `${c.x},${c.y}`));
-  const free = [];
-  for (let y = 0; y < state.rows; y++) {
-    for (let x = 0; x < state.cols; x++) {
-      if (!state.walls.has(`${x},${y}`) && !onSnake.has(`${x},${y}`)) free.push({ x, y });
+// cells the head can actually reach (body treated as passable — it moves)
+function reachable(state) {
+  const seen = new Set([`${state.snake[0].x},${state.snake[0].y}`]);
+  const stack = [{ ...state.snake[0] }];
+  const out = [];
+  while (stack.length) {
+    const { x, y } = stack.pop();
+    out.push({ x, y });
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const key = `${nx},${ny}`;
+      if (nx < 0 || ny < 0 || nx >= state.cols || ny >= state.rows) continue;
+      if (state.walls.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      stack.push({ x: nx, y: ny });
     }
   }
+  return out;
+}
+
+function placeFood(state) {
+  const onSnake = new Set(state.snake.map((c) => `${c.x},${c.y}`));
+  // only reachable cells — a closed maze (Vault) must not spawn food outside
+  const free = reachable(state).filter((c) => !onSnake.has(`${c.x},${c.y}`));
   if (!free.length) return null;
   return free[Math.floor(Math.random() * free.length)];
 }
@@ -224,7 +241,10 @@ export default {
       if (state.dead || state.cleared) return;
       step(state);
       if (state.dead) {
-        showOverlay('Game Over', [['Restart', restart]]);
+        showOverlay('Game Over', [
+          ['Restart', restart],
+          ['Choose Level', () => options.onExit()],
+        ]);
       } else {
         if (state.score > lastScore) {
           lastScore = state.score;
@@ -236,6 +256,7 @@ export default {
           const hasNext = LEVELS.indexOf(level) < LEVELS.length - 1;
           showOverlay('Level Clear!', [
             ...(hasNext ? [['Next Level →', () => options.onNext()]] : []),
+            ['Choose Level', () => options.onExit()],
             ['Play Again', restart],
           ]);
         }

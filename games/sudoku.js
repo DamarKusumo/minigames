@@ -222,6 +222,11 @@ export default {
           next.addEventListener('click', () => options.onNext());
           overlay.appendChild(next);
         }
+        const exit = document.createElement('button');
+        exit.className = 'btn';
+        exit.textContent = 'Choose Level';
+        exit.addEventListener('click', () => options.onExit());
+        overlay.appendChild(exit);
         const btn = document.createElement('button');
         btn.className = 'btn';
         btn.textContent = 'New puzzle';

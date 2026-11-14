@@ -34,7 +34,8 @@
       await sleep(2500); // ~12 ticks x 200ms reaches the wall from mid-grid
       const overlay = document.querySelector('.overlay');
       step('snake dies at wall', !!overlay && !overlay.hidden && overlay.textContent.includes('Game Over'));
-      overlay.querySelector('button').click();
+      step('overlay offers choose-level', [...overlay.querySelectorAll('button')].some((b) => b.textContent === 'Choose Level'));
+      overlay.querySelector('button').click(); // Restart
       step('restart hides overlay', document.querySelector('.overlay').hidden === true);
 
       // touch: swipe up on the grid should steer (and die at the top again)
@@ -44,8 +45,12 @@
       const ov2 = document.querySelector('.overlay');
       step('snake touch swipe steers', !!ov2 && !ov2.hidden && ov2.textContent.includes('Game Over'));
 
+      // Choose Level exits the game back to the level picker
+      [...ov2.querySelectorAll('button')].find((b) => b.textContent === 'Choose Level').click();
+      step('choose level returns to picker', !!document.querySelector('.level-list'));
+      btns()[0].click(); // re-enter level 1, fresh game
+
       // on-screen arrow button steers too
-      ov2.querySelector('button').click(); // restart
       [...document.querySelectorAll('.dpad .dpad-btn')].find((b) => b.textContent === '↑').click();
       await sleep(2500);
       const ov3 = document.querySelector('.overlay');
@@ -103,6 +108,7 @@
       }
       const so = document.querySelector('.overlay');
       step('sudoku win overlay', !!so && !so.hidden && so.textContent.includes('Solved'));
+      step('sudoku overlay offers choose-level', [...so.querySelectorAll('button')].some((b) => b.textContent === 'Choose Level'));
       step('sudoku clear wired to storage', getUnlockedLevel('sudoku') >= 2);
 
       // given clues are immutable: a filled cell cannot be erased or overwritten.

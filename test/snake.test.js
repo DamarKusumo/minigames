@@ -57,6 +57,26 @@ test('swipeDir maps a dominant axis to a direction, ignores tiny swipes', () => 
   assert.equal(swipeDir(0, 0), null);
 });
 
+test('vault: food never spawns outside the box when the snake starts inside', () => {
+  const vault = LEVELS.find((l) => l.id === 5);
+  for (let i = 0; i < 25; i++) {
+    const g = createGame(vault);
+    // exterior = free cells reachable from the top-left corner (independent flood fill)
+    const ext = new Set();
+    const queue = [{ x: 0, y: 0 }];
+    while (queue.length) {
+      const { x, y } = queue.pop();
+      const key = `${x},${y}`;
+      if (ext.has(key)) continue;
+      if (x < 0 || y < 0 || x >= g.cols || y >= g.rows || g.walls.has(key)) continue;
+      ext.add(key);
+      queue.push({ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 });
+    }
+    const foodKey = `${g.food.x},${g.food.y}`;
+    assert.ok(!ext.has(foodKey), `food spawned in unreachable exterior cell ${foodKey}`);
+  }
+});
+
 test('cellSizeFor fits the viewport on phones and grows on desktop', () => {
   const cols = 16;
   const phone = cellSizeFor(320, cols);

@@ -225,7 +225,10 @@ export default {
       if (dir !== 0) movePaddle(state, dir);
       step(state);
       if (state.dead) {
-        showOverlay('Game Over', [['Restart', restart]]);
+        showOverlay('Game Over', [
+          ['Restart', restart],
+          ['Choose Level', () => options.onExit()],
+        ]);
       } else {
         if (state.score > lastScore) {
           lastScore = state.score;
@@ -237,6 +240,7 @@ export default {
           const hasNext = LEVELS.indexOf(level) < LEVELS.length - 1;
           showOverlay('Level Clear!', [
             ...(hasNext ? [['Next Level →', () => options.onNext()]] : []),
+            ['Choose Level', () => options.onExit()],
             ['Play Again', restart],
           ]);
         }

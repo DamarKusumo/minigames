@@ -100,6 +100,9 @@ export function renderGame(game, levelId) {
       const next = game.levels[i + 1];
       if (next) renderGame(game, next.id);
     },
+    onExit() {
+      renderLevelSelect(game);
+    },
   });
 }
 
